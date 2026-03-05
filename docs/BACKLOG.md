@@ -10,14 +10,14 @@
 - [x] Tests for parser/header/errors/backends.
 - [x] Simplify public interface to top-level function API (`import oa`) and match CLI operations.
 - [x] Expose oa-org online station discovery in simple API/CLI and remove station pinning from top-level confidential helper.
-- [ ] Add request-key signature verification helper (org + station signatures).
-- [ ] Add retry policy matrix by endpoint idempotency and ticket-consumption risk.
+- [x] Add request-key signature verification helper (org + station signatures).
+- [x] Add retry policy matrix by endpoint idempotency and ticket-consumption risk.
 - [ ] Add full async parity for end-to-end request_key + inference workflow.
 
 ## P1
 - [x] Blind-signature ticket issuance via `privacypass-py`.
 - [ ] Async API parity for all sync functions and services.
-- [ ] Improved retry policy by endpoint idempotency class.
+- [x] Improved retry policy by endpoint idempotency class.
 - [x] Add concrete provider-direct target for at least one non-OpenAI provider (Gemini).
 - [ ] Finalize TEE gateway auth contract and replace stub assumptions.
 - [ ] Expand Gemini live mode beyond single text-turn helper (streaming multimodal sessions).

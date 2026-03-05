@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import asyncio
 import random
 import time
 from email.utils import parsedate_to_datetime
@@ -115,7 +116,7 @@ class AsyncHTTPTransport:
                 data = _safe_parse_json(response)
 
                 if response.status_code in self._retry.retryable_status_codes and attempt < attempts:
-                    _sleep_backoff(
+                    await _sleep_backoff_async(
                         attempt=attempt,
                         response=response,
                         retry=self._retry,
@@ -132,7 +133,7 @@ class AsyncHTTPTransport:
                 last_error = exc
                 if attempt >= attempts:
                     break
-                _sleep_backoff(attempt=attempt, response=None, retry=self._retry)
+                await _sleep_backoff_async(attempt=attempt, response=None, retry=self._retry)
 
         if last_error is not None:
             raise OARetryExhaustedError(f"{context} failed after {attempts} attempts: {last_error}")
@@ -172,16 +173,26 @@ def _safe_parse_json(response: httpx.Response) -> Any:
 
 
 def _sleep_backoff(*, attempt: int, response: httpx.Response | None, retry: RetryConfig) -> None:
-    retry_after_seconds = _parse_retry_after(response.headers.get("Retry-After") if response else None)
-    if retry_after_seconds is not None:
-        delay = min(retry_after_seconds, retry.max_delay_seconds)
-    else:
-        exp = retry.base_delay_seconds * (2 ** (attempt - 1))
-        jitter = random.random() * retry.base_delay_seconds
-        delay = min(exp + jitter, retry.max_delay_seconds)
+    delay = _compute_backoff_delay(attempt=attempt, response=response, retry=retry)
 
     if delay > 0:
         time.sleep(delay)
+
+
+async def _sleep_backoff_async(*, attempt: int, response: httpx.Response | None, retry: RetryConfig) -> None:
+    delay = _compute_backoff_delay(attempt=attempt, response=response, retry=retry)
+    if delay > 0:
+        await asyncio.sleep(delay)
+
+
+def _compute_backoff_delay(*, attempt: int, response: httpx.Response | None, retry: RetryConfig) -> float:
+    retry_after_seconds = _parse_retry_after(response.headers.get("Retry-After") if response else None)
+    if retry_after_seconds is not None:
+        return min(retry_after_seconds, retry.max_delay_seconds)
+
+    exp = retry.base_delay_seconds * (2 ** (attempt - 1))
+    jitter = random.random() * retry.base_delay_seconds
+    return min(exp + jitter, retry.max_delay_seconds)
 
 
 def _parse_retry_after(value: str | None) -> float | None:

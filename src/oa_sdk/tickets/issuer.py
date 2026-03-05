@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple
 from ..config import OAConfig
 from ..errors import BlindSignatureUnavailableError, OAProtocolError
 from ..models import Ticket, TicketRedeemResult
+from ..retry_policy import endpoint_retry_allowed
 from ..transport import HTTPTransport, ensure_success
 
 DEFAULT_CHALLENGE_ISSUER = (
@@ -86,7 +87,12 @@ class TicketIssuerService:
 
     def fetch_public_key(self) -> str:
         url = f"{self._config.org_api_base}/api/ticket/issue/public-key"
-        result = self._transport.request_json("GET", url, context="ticket issue public key")
+        result = self._transport.request_json(
+            "GET",
+            url,
+            allow_retry=endpoint_retry_allowed("ticket_issue_public_key"),
+            context="ticket issue public key",
+        )
         ensure_success(result, context="ticket issue public key")
 
         if not isinstance(result.data, dict) or not isinstance(result.data.get("public_key"), str):
@@ -120,7 +126,7 @@ class TicketIssuerService:
                 "credential": credential,
                 "blinded_requests": blinded_requests,
             },
-            allow_retry=False,
+            allow_retry=endpoint_retry_allowed("alpha_register"),
             context="alpha register",
         )
         ensure_success(result, context="alpha register")

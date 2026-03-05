@@ -75,8 +75,9 @@ class TicketStore:
 
     def extend_active(self, tickets: Iterable[Ticket]) -> None:
         existing = {ticket.finalized_ticket for ticket in self.active}
+        archived = {ticket.finalized_ticket for ticket in self.archived}
         for ticket in tickets:
-            if ticket.finalized_ticket in existing:
+            if ticket.finalized_ticket in existing or ticket.finalized_ticket in archived:
                 continue
             self.active.append(ticket)
             existing.add(ticket.finalized_ticket)

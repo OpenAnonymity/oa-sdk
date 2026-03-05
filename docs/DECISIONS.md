@@ -100,3 +100,23 @@ Decision:
 Why:
 - The SDK should expose actual online stations from oa-org instead of relying on hardcoded IDs in examples.
 - Key exchange ownership remains with oa-org as the intermediary station relay.
+
+## 2026-02-25: Explicit endpoint retry policy matrix
+Decision:
+- Add one centralized retry policy matrix keyed by endpoint semantic intent.
+- Wire every transport call site to a named policy instead of ad-hoc booleans.
+
+Why:
+- Retry behavior needs to be auditable against idempotency and ticket-consumption risk.
+- Centralizing policy reduces accidental unsafe retries when new endpoints are added.
+
+## 2026-02-25: Request-key signature verification helper
+Decision:
+- Add SDK helper support for verifying `/api/request_key` signatures:
+  - station signature payload: `{station_id}|{key}|{expires_at_unix}`
+  - org signature payload: `{station_id}|{key}|{expires_at_unix}|{station_signature}`
+- Keep Ed25519 verification dependency optional (`pynacl` or `cryptography`).
+
+Why:
+- Signature checks are a core hardening step for confidential/verifier workflows.
+- Optional dependency keeps base SDK minimal while still enabling strong verification paths.

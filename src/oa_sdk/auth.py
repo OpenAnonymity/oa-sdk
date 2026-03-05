@@ -6,7 +6,7 @@ from .errors import TicketFormatError
 
 
 def build_inference_ticket_header(tokens: Iterable[str]) -> str:
-    normalized = [token.strip() for token in tokens if token and token.strip()]
+    normalized = [_normalize_ticket_token(token) for token in tokens if token and token.strip()]
     if not normalized:
         raise TicketFormatError("At least one ticket token is required")
 
@@ -17,17 +17,30 @@ def build_inference_ticket_header(tokens: Iterable[str]) -> str:
 
 
 def parse_inference_ticket_header(authorization: str) -> List[str]:
-    if not authorization.startswith("InferenceTicket"):
+    prefix = "InferenceTicket "
+    if not authorization.startswith(prefix):
         raise TicketFormatError("Invalid authorization scheme")
 
-    if "tokens=" in authorization:
-        raw = authorization.replace("InferenceTicket tokens=", "", 1)
-    elif "token=" in authorization:
-        raw = authorization.replace("InferenceTicket token=", "", 1)
+    payload = authorization[len(prefix):]
+    if payload.startswith("tokens="):
+        raw = payload[len("tokens=") :]
+    elif payload.startswith("token="):
+        raw = payload[len("token=") :]
     else:
         raise TicketFormatError("Missing token/tokens field")
 
-    values = [token.strip() for token in raw.split(",") if token.strip()]
+    values = [_normalize_ticket_token(token) for token in raw.split(",") if token.strip()]
     if not values:
         raise TicketFormatError("No ticket tokens found")
     return values
+
+
+def _normalize_ticket_token(token: str) -> str:
+    normalized = token.strip()
+    if not normalized:
+        raise TicketFormatError("Ticket token cannot be empty")
+    if any(character in normalized for character in (",", "\r", "\n")):
+        raise TicketFormatError("Ticket token contains invalid delimiter characters")
+    if any(character.isspace() for character in normalized):
+        raise TicketFormatError("Ticket token contains whitespace")
+    return normalized

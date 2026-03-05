@@ -238,3 +238,44 @@ Completed:
 
 Tests:
 - `OA_E2E_LIVE=1 OA_E2E_TICKETS_FILE=oa-chat-tickets.json OA_E2E_MODEL=openai/gpt-5.2-chat OA_E2E_PROMPT='ping' OA_E2E_TICKET_COUNT=1 PYTHONPATH=src pytest -m e2e_live tests/test_e2e_live.py -q` -> `1 passed`.
+
+## 2026-02-25 - Milestone 9 (Before)
+Planned:
+1. Run a full SDK hardening scan across transport, auth/header parsing, key request flow, ticket store semantics, and retry behavior.
+2. Implement remaining P0 hardening work:
+   - request-key signature verification helper (station + org signatures),
+   - explicit endpoint retry policy matrix tied to idempotency and ticket-consumption risk.
+3. Fix async transport retry backoff to avoid blocking sleeps in async code paths.
+4. Add targeted tests for all new/changed behavior and run full `pytest -ra`.
+
+## 2026-02-25 - Milestone 9 (After)
+Completed:
+- [x] Added centralized retry policy matrix (`src/oa_sdk/retry_policy.py`) and wired service calls to named endpoint policy entries.
+- [x] Added request-key signature verification helpers (`src/oa_sdk/signatures.py`) including:
+  - station payload format: `{station_id}|{key}|{expires_at_unix}`
+  - org payload format: `{station_id}|{key}|{expires_at_unix}|{station_signature}`
+  - optional Ed25519 verification backends (`pynacl` or `cryptography`)
+- [x] Added `KeyService` hardening helpers:
+  - `fetch_org_public_key()`
+  - `verify_key_lease_signatures(...)`
+- [x] Fixed async transport retry backoff to use non-blocking async sleep in `AsyncHTTPTransport`.
+- [x] Hardened ticket auth header handling by rejecting malformed tokens (delimiter/newline/whitespace injection cases).
+- [x] Hardened ticket store merge semantics to avoid re-adding already archived tokens.
+- [x] Added/updated tests for all hardening changes:
+  - `tests/test_auth.py`
+  - `tests/test_key_service.py`
+  - `tests/test_retry_policy.py`
+  - `tests/test_signatures.py`
+  - `tests/test_ticket_store.py`
+  - `tests/test_transport.py`
+- [x] Updated README/docs for signature verification and retry policy behavior.
+
+Tests:
+- `pytest -ra` -> `36 passed, 1 skipped`.
+- `python -m compileall -q src` -> success.
+- `ruff check src tests` -> not run (`ruff` not installed in shell).
+- `mypy src` -> not run (`mypy` not installed in shell).
+
+Remaining Risks / Follow-ups:
+1. Full async parity is still incomplete at public API/service level (backlog item remains open).
+2. Station signature verification still requires callers to supply a trusted station public key source.

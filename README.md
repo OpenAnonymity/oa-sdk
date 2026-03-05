@@ -2,6 +2,8 @@
 
 Python SDK for The Open Anonymity Project unlinkable inference workflow.
 
+> **Work in progress:** This repository is under active development. APIs and documentation may change before the `0.1.0` release.
+
 Public API is intentionally simple:
 - list online stations (`oa.list_stations`)
 - request OA key (`oa.request_unlinkable_key`)
@@ -26,6 +28,12 @@ Optional Gemini Live support:
 
 ```bash
 pip install -e '.[gemini-live]'
+```
+
+Optional request-key signature verification helpers:
+
+```bash
+pip install -e '.[signatures]'
 ```
 
 ## Python API (simple)
@@ -59,6 +67,24 @@ import oa
 key = oa.request_confidential_key(
     ticket_count=1,
 )
+```
+
+Advanced signature verification (station + org):
+
+```python
+from oa_sdk.client import OAClient
+from oa_sdk.tickets.store import TicketStore
+
+store = TicketStore.from_file("oa-chat-tickets.json")
+with OAClient() as client:
+    lease = client.keys.request_key_from_store(store=store, count=1)
+    org_pub = client.keys.fetch_org_public_key()
+    verification = client.keys.verify_key_lease_signatures(
+        lease=lease,
+        org_public_key_hex=org_pub,
+        # station_public_key_hex=...  # from trusted station directory/broadcast
+    )
+    print(verification.org_signature_valid)
 ```
 
 Ticket management:

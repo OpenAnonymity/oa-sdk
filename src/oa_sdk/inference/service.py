@@ -5,6 +5,7 @@ from typing import Mapping
 from ..config import OAConfig
 from ..errors import OAHTTPError
 from ..models import OAResponse
+from ..retry_policy import endpoint_retry_allowed
 from ..transport import HTTPTransport
 from .backends import (
     BackendKind,
@@ -46,7 +47,7 @@ class InferenceService:
             url,
             headers=headers,
             json_body=payload,
-            allow_retry=True,
+            allow_retry=endpoint_retry_allowed("inference"),
             context=f"inference backend {backend.id}",
         )
 

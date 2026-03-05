@@ -6,6 +6,8 @@ from .auth import build_inference_ticket_header
 from .config import OAConfig
 from .errors import OAHTTPError, OAProtocolError, TicketUsedError
 from .models import KeyLease, ModelTicketMap, StationInfo
+from .retry_policy import endpoint_retry_allowed
+from .signatures import RequestKeySignatureVerification, verify_request_key_signatures
 from .tickets.store import Order, TicketStore
 from .transport import HTTPTransport, ensure_success
 
@@ -17,7 +19,12 @@ class KeyService:
 
     def fetch_model_tickets(self) -> ModelTicketMap:
         url = f"{self._config.org_api_base}/chat/model-tickets"
-        result = self._transport.request_json("GET", url, context="model tickets")
+        result = self._transport.request_json(
+            "GET",
+            url,
+            allow_retry=endpoint_retry_allowed("model_tickets"),
+            context="model tickets",
+        )
         ensure_success(result, context="model tickets")
 
         if not isinstance(result.data, dict):
@@ -35,7 +42,12 @@ class KeyService:
 
         endpoint = "/api/v2/online" if version == 2 else "/api/online"
         url = f"{self._config.org_api_base}{endpoint}"
-        result = self._transport.request_json("GET", url, context="online stations")
+        result = self._transport.request_json(
+            "GET",
+            url,
+            allow_retry=endpoint_retry_allowed("online_stations"),
+            context="online stations",
+        )
         ensure_success(result, context="online stations")
 
         if not isinstance(result.data, dict):
@@ -98,7 +110,7 @@ class KeyService:
                 "Content-Type": "application/json",
             },
             json_body=body,
-            allow_retry=True,
+            allow_retry=endpoint_retry_allowed("request_key"),
             context="request key",
         )
 
@@ -178,6 +190,38 @@ class KeyService:
 
         store.archive_selected(selected, status="consumed")
         return lease
+
+    def fetch_org_public_key(self) -> str:
+        url = f"{self._config.org_api_base}/api/public_key"
+        result = self._transport.request_json(
+            "GET",
+            url,
+            allow_retry=endpoint_retry_allowed("org_public_key"),
+            context="org public key",
+        )
+        ensure_success(result, context="org public key")
+
+        if not isinstance(result.data, Mapping):
+            raise OAProtocolError("org public key response is not an object")
+
+        public_key = result.data.get("public_key")
+        if not isinstance(public_key, str) or not public_key:
+            raise OAProtocolError("org public key response missing 'public_key'")
+
+        return public_key
+
+    def verify_key_lease_signatures(
+        self,
+        *,
+        lease: KeyLease,
+        station_public_key_hex: str | None = None,
+        org_public_key_hex: str | None = None,
+    ) -> RequestKeySignatureVerification:
+        return verify_request_key_signatures(
+            lease=lease,
+            station_public_key_hex=station_public_key_hex,
+            org_public_key_hex=org_public_key_hex,
+        )
 
 
 def _extract_error_message(data: object, text: str, status_code: int) -> str:

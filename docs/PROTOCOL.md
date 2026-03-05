@@ -51,10 +51,26 @@ Public simple API mapping:
 - `oa.request_confidential_key(...)` -> same endpoint through oa-org relay (no station pin in simple API); optional attestation requirement is client-side enforced.
 - `oa.list_stations(...)` -> calls `GET /api/v2/online` (or `/api/online` for v1).
 
+### `GET /api/public_key`
+- Returns org Ed25519 public key used to verify `org_signature` from `/api/request_key`.
+- Expected response: `{ "public_key": "<hex>", "algorithm": "Ed25519" }`
+
 ## Error Handling Rules
 - `401` with spent/double-use hints => map to spent-ticket error.
 - Network/5xx/429 are retryable by transport policy.
 - Non-idempotent operations must avoid blind retries unless safe.
+
+## Request-Key Signature Verification
+`/api/request_key` signatures are verified against these exact UTF-8 payloads:
+- Station signature payload: `"{station_id}|{key}|{expires_at_unix}"`
+- Org signature payload: `"{station_id}|{key}|{expires_at_unix}|{station_signature}"`
+
+SDK helper surface:
+- `KeyService.fetch_org_public_key()`
+- `KeyService.verify_key_lease_signatures(...)`
+
+Note:
+- Station signature verification requires a trusted station public key source (for example a verifier broadcast/directory).
 
 ## Cross-SDK Contract Policy
 - Python and JavaScript SDKs are separate implementations and both must conform to this protocol document.
@@ -74,6 +90,16 @@ Backend mapping:
   - concrete Gemini target: Gemini OpenAI-compatible endpoint (`https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`).
 - `tee_gateway`: OpenResponses-compatible `/v1/responses` through TEE gateway endpoint with configurable headers.
   - currently modeled as explicit backend target; gateway-specific auth/attestation contract TBD.
+
+## Retry Policy Matrix
+The SDK maintains explicit per-endpoint retry policy:
+- `model_tickets` (`GET /chat/model-tickets`): retry allowed (`idempotent`).
+- `online_stations` (`GET /api/v2/online` or `/api/online`): retry allowed (`idempotent`).
+- `org_public_key` (`GET /api/public_key`): retry allowed (`idempotent`).
+- `request_key` (`POST /api/request_key`): retry allowed (`safe_with_rollback` semantics on org relay path).
+- `ticket_issue_public_key` (`GET /api/ticket/issue/public-key`): retry allowed (`idempotent`).
+- `alpha_register` (`POST /api/alpha-register`): retry disabled (`non_idempotent`).
+- `inference` (backend calls): retry allowed for transient transport/5xx/429 failures.
 
 ## Gemini Live API (Official Ephemeral Token Flow)
 Reference docs:
