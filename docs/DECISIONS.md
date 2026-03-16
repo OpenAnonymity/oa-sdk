@@ -120,3 +120,14 @@ Decision:
 Why:
 - Signature checks are a core hardening step for confidential/verifier workflows.
 - Optional dependency keeps base SDK minimal while still enabling strong verification paths.
+
+## 2026-03-15: README onboarding should mirror the two real user entry points
+Decision:
+- Keep README quickstart centered on the two concrete starting states users actually have:
+  - an exported `tickets.json`
+  - a redeemable 24-character ticket code
+- Keep advanced service/class usage below that quickstart instead of making it first contact.
+
+Why:
+- The baseline comparison is the bare `request_key.py` script, which succeeds because it is task-shaped and obvious.
+- The SDK already has the necessary simple surface (`oa.request_unlinkable_key`, `oa.add_tickets`), so the remaining usability risk is discovery, not missing functionality.

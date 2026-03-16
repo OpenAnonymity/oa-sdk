@@ -279,3 +279,38 @@ Tests:
 Remaining Risks / Follow-ups:
 1. Full async parity is still incomplete at public API/service level (backlog item remains open).
 2. Station signature verification still requires callers to supply a trusted station public key source.
+
+## 2026-03-15 - Milestone 10 (Before)
+Planned:
+1. Review the current simple SDK surface against the standalone `request_key.py` baseline and the `oa-fastchat` ticket-code redemption flow.
+2. Confirm whether the SDK is already at least as simple to use for:
+   - existing `tickets.json` -> request key
+   - ticket code -> redeem tickets locally -> request key
+3. If README onboarding is still too diffuse, add one compact quickstart section centered on those two entry points.
+
+## 2026-03-15 - Milestone 10 (After)
+Completed:
+- [x] Reviewed the current public SDK surface against:
+  - local `request_key.py`
+  - `oa-fastchat/chat/services/ticketClient.js`
+  - `oa-fastchat/chat/services/privacyPass.js`
+- [x] Confirmed the simple surface already covers the required minimal workflows:
+  - `oa.request_unlinkable_key(...)` for existing local tickets
+  - `oa.add_tickets(...)` for ticket-code redemption into local store
+  - `oa-sdk request-unlinkable-key ...` / `oa-sdk add-tickets ...` for the same flows from CLI
+- [x] Confirmed ticket-file compatibility and request-key behavior remain aligned with the bare script:
+  - exported oa-chat ticket shapes are parsed by `oa_sdk.tickets.parser`
+  - `InferenceTicket token=...` / `tokens=...` formatting is covered by tests
+  - spent-ticket mapping is covered by `tests/test_key_service.py`
+- [x] Added a README quickstart section that starts from the two real user entry points:
+  - already have `tickets.json`
+  - only have a redeemable ticket code
+
+Tests:
+- `pytest -ra` -> `36 passed, 1 skipped`.
+- skipped test: live E2E requires `OA_E2E_LIVE=1`.
+- `python -m compileall -q src` -> success.
+
+Remaining Risks / Follow-ups:
+1. README onboarding is now clearer, but live E2E for the ticket-code redemption path was not re-run in this pass.
+2. Ticket-code redemption still requires the optional blind-signature dependency (`pip install -e '.[blind-signatures]'`), which is documented but not part of the base install.

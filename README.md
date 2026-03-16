@@ -36,6 +36,65 @@ Optional request-key signature verification helpers:
 pip install -e '.[signatures]'
 ```
 
+## Quick Start
+
+The two minimal starting points are:
+
+### 1. You already have `tickets.json`
+
+Compatible with the oa-chat export shapes handled by [`request_key.py`](request_key.py).
+
+```python
+import oa
+
+lease = oa.request_unlinkable_key(
+    ticket_file="tickets.json",
+    ticket_count=1,
+)
+
+print(lease["key"])
+print(lease["tickets_consumed"])
+```
+
+Or from the CLI:
+
+```bash
+oa-sdk request-unlinkable-key tickets.json --count 1
+```
+
+### 2. You have a redeemable ticket code
+
+Install blind-signature support first:
+
+```bash
+pip install -e '.[blind-signatures]'
+```
+
+Then redeem the code into a local ticket store and request a key:
+
+```python
+import oa
+
+oa.add_tickets(
+    "WTWz9cPXJmA2LMN7qNBt012C",
+    ticket_file="oa-chat-tickets.json",
+)
+
+lease = oa.request_unlinkable_key(
+    ticket_file="oa-chat-tickets.json",
+    ticket_count=1,
+)
+
+print(lease["key"])
+```
+
+Or from the CLI:
+
+```bash
+oa-sdk add-tickets WTWz9cPXJmA2LMN7qNBt012C oa-chat-tickets.json
+oa-sdk request-unlinkable-key oa-chat-tickets.json --count 1
+```
+
 ## Python API (simple)
 
 ```python
