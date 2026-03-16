@@ -433,3 +433,23 @@ Tests:
 
 Remaining Risks / Follow-ups:
 1. `ticket_preview` is intentionally lossy; callers that need the full finalized ticket should still use `include_tokens=True`.
+
+## 2026-03-15 - Milestone 15 (Before)
+Planned:
+1. Add a repository `LICENSE` file for GNU AGPL v3.
+2. Update package metadata to stop claiming MIT and reflect AGPL licensing.
+3. Record the licensing change in status/docs as a standalone repository metadata update.
+
+## 2026-03-15 - Milestone 15 (After)
+Completed:
+- [x] Added repository `LICENSE` file with GNU Affero General Public License v3 text.
+- [x] Updated package metadata in `pyproject.toml` from `MIT` to `AGPL-3.0-only`.
+- [x] Added a short license note to `README.md`.
+
+Tests:
+- `pytest -ra` -> `40 passed, 1 skipped`
+- skipped test: `tests/test_e2e_live.py` requires `OA_E2E_LIVE=1`
+- `python -m compileall -q src` -> success
+
+Remaining Risks / Follow-ups:
+1. The repository now states AGPL in both `LICENSE` and package metadata, but downstream packaging/publication workflows may also need classifier or README updates if stricter ecosystem labeling is desired later.

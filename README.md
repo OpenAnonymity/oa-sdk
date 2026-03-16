@@ -183,3 +183,7 @@ Minimal copy-paste quickstart:
 Live E2E test instructions:
 - `docs/E2E_TESTING.md`
   - defaults to the newest OA-supported free OpenRouter model when `OA_E2E_MODEL` is unset
+
+## License
+
+GNU Affero General Public License v3.0. See `LICENSE`.
