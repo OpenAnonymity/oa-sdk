@@ -34,6 +34,11 @@ RETRY_POLICY_MATRIX: Mapping[str, EndpointRetryPolicy] = {
         idempotency=IdempotencyClass.IDEMPOTENT,
         rationale="Read-only GET request for org verification key material.",
     ),
+    "openrouter_model_catalog": EndpointRetryPolicy(
+        allow_retry=True,
+        idempotency=IdempotencyClass.IDEMPOTENT,
+        rationale="Read-only GET request for current OpenRouter model metadata.",
+    ),
     "request_key": EndpointRetryPolicy(
         allow_retry=True,
         idempotency=IdempotencyClass.SAFE_WITH_ROLLBACK,

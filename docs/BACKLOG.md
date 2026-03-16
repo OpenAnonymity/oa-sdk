@@ -19,6 +19,7 @@
 - [ ] Async API parity for all sync functions and services.
 - [x] Improved retry policy by endpoint idempotency class.
 - [x] Add concrete provider-direct target for at least one non-OpenAI provider (Gemini).
+- [x] Add OpenRouter catalog helper for free-model discovery in live testing/docs.
 - [ ] Finalize TEE gateway auth contract and replace stub assumptions.
 - [ ] Expand Gemini live mode beyond single text-turn helper (streaming multimodal sessions).
 - [ ] Add shared JS/Python conformance fixture suite (ticket/header/request-key/backend-mode parity).

@@ -7,6 +7,7 @@ from .backends import (
 )
 from .gemini_live import GeminiEphemeralToken, GeminiLiveClient
 from .models import AccessCredential, ResponseInputMessage, ResponseRequest
+from .openrouter_catalog import OpenRouterModel
 from .service import InferenceService
 
 __all__ = [
@@ -18,6 +19,7 @@ __all__ = [
     "GeminiEphemeralToken",
     "GeminiLiveClient",
     "AccessCredential",
+    "OpenRouterModel",
     "ResponseInputMessage",
     "ResponseRequest",
     "InferenceService",

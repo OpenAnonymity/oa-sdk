@@ -59,6 +59,11 @@ Required behavior:
   - InferenceTicket auth header formatting.
   - Request-key error mapping (especially spent tickets).
   - Backend abstraction behavior for ephemeral/provider-direct/TEE gateway modes.
+- Manual/live verification is allowed to redeem real tickets when that is the most direct way to validate the end-to-end flow.
+- In this repo, local developers and agents can be liberal about running live E2E tests when changing ticket/key/inference behavior.
+- When doing live OA + OpenRouter testing, prefer free OpenRouter models instead of pinning brittle paid examples.
+  - Leave `OA_E2E_MODEL` unset in `tests/test_e2e_live.py` to auto-select the newest OA-supported free model from the live OpenRouter catalog.
+  - If you need to inspect candidates directly, use `InferenceService.latest_openrouter_free_model(...)` with the OA model-tier allowlist.
 
 ## Release Target
 Initial release is `0.1.0` once these are complete:

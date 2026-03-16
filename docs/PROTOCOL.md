@@ -14,6 +14,21 @@ Derived from:
 ### `GET /chat/model-tickets`
 - Returns map: `{ "model_id": <ticket_cost_int>, ... }`.
 
+### `GET /models` (OpenRouter)
+- Returns model catalog object: `{ "data": [ ... ] }`.
+- SDK currently reads these fields when present:
+  - `id`
+  - `name`
+  - `created`
+  - `canonical_slug`
+  - `context_length`
+  - `description`
+  - `pricing`
+- Free-model heuristic used by live testing helpers:
+  - `pricing.prompt == "0"`
+  - `pricing.completion == "0"`
+  - `pricing.request` absent or `"0"`
+
 ### `GET /api/v2/online`
 - Returns current online v2 stations keyed by station ID.
 - Example station shape includes:
@@ -94,6 +109,7 @@ Backend mapping:
 ## Retry Policy Matrix
 The SDK maintains explicit per-endpoint retry policy:
 - `model_tickets` (`GET /chat/model-tickets`): retry allowed (`idempotent`).
+- `openrouter_model_catalog` (`GET /models` on OpenRouter): retry allowed (`idempotent`).
 - `online_stations` (`GET /api/v2/online` or `/api/online`): retry allowed (`idempotent`).
 - `org_public_key` (`GET /api/public_key`): retry allowed (`idempotent`).
 - `request_key` (`POST /api/request_key`): retry allowed (`safe_with_rollback` semantics on org relay path).
@@ -130,3 +146,8 @@ CLI commands mirror these operations:
 - `add-tickets`
 - `show-tickets`
 - `archive-tickets`
+
+Advanced inference helper surface also includes:
+- `InferenceService.list_openrouter_models()`
+- `InferenceService.list_openrouter_free_models(...)`
+- `InferenceService.latest_openrouter_free_model(...)`

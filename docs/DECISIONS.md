@@ -121,6 +121,16 @@ Why:
 - Signature checks are a core hardening step for confidential/verifier workflows.
 - Optional dependency keeps base SDK minimal while still enabling strong verification paths.
 
+## 2026-03-15: Live E2E should discover a current OA-supported free OpenRouter model
+Decision:
+- Treat real-ticket redemption as acceptable for explicit manual end-to-end validation in this repo.
+- Add inference-layer OpenRouter catalog helpers and default the live E2E test to the newest free text model that also appears in OA's current model-tier map.
+- Keep `OA_E2E_MODEL` as an explicit override for debugging or reproduction.
+
+Why:
+- Hardcoded example model IDs drift quickly and create avoidable contributor friction.
+- Intersecting OpenRouter free models with OA's live allowlist is safer than assuming every free catalog entry is usable with OA-issued keys.
+
 ## 2026-03-15: README onboarding should mirror the two real user entry points
 Decision:
 - Keep README quickstart centered on the two concrete starting states users actually have:

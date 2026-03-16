@@ -314,3 +314,70 @@ Tests:
 Remaining Risks / Follow-ups:
 1. README onboarding is now clearer, but live E2E for the ticket-code redemption path was not re-run in this pass.
 2. Ticket-code redemption still requires the optional blind-signature dependency (`pip install -e '.[blind-signatures]'`), which is documented but not part of the base install.
+
+## 2026-03-15 - Milestone 11 (Before)
+Planned:
+1. Add contributor-facing guidance that redeeming real tickets for manual/live testing is acceptable, with preference for free OpenRouter models.
+2. Add a small OpenRouter catalog helper so tests/docs can discover the newest free model dynamically instead of pinning a brittle example model ID.
+3. Update the live E2E path and runbook to use catalog-discovered free models by default while still allowing `OA_E2E_MODEL` override.
+
+## 2026-03-15 - Milestone 11 (After)
+Completed:
+- [x] Added OpenRouter catalog helper in the inference layer:
+  - `InferenceService.list_openrouter_models()`
+  - `InferenceService.list_openrouter_free_models(...)`
+  - `InferenceService.latest_openrouter_free_model(...)`
+- [x] Added typed OpenRouter catalog parsing/model metadata module:
+  - `src/oa_sdk/inference/openrouter_catalog.py`
+- [x] Updated live E2E pytest default model resolution:
+  - if `OA_E2E_MODEL` is unset, it now selects the newest free OpenRouter text model that also appears in OA's current `/chat/model-tickets` map
+- [x] Updated contributor/testing docs:
+  - `AGENTS.md`
+  - `docs/E2E_TESTING.md`
+  - `docs/DECISIONS.md`
+  - `docs/PROTOCOL.md`
+  - `README.md`
+  - `docs/BACKLOG.md`
+- [x] Added unit coverage for OpenRouter catalog parsing/filtering/selection:
+  - `tests/test_inference.py`
+
+Tests:
+- `pytest tests/test_inference.py -q` -> `6 passed`.
+- `pytest -ra` -> `39 passed, 1 skipped`.
+- skipped test: `tests/test_e2e_live.py` requires `OA_E2E_LIVE=1`.
+- `python -m compileall -q src` -> success.
+
+Remaining Risks / Follow-ups:
+1. The new free-model auto-selection path was not live-exercised in this turn because doing so would redeem a real ticket.
+2. OpenRouter catalog semantics are external and may evolve; the SDK currently treats zero `prompt` + zero `completion` + absent/zero `request` pricing as the free-text-model signal.
+
+## 2026-03-15 - Milestone 12 (Before)
+Planned:
+1. Make the live E2E test print ticket-usage information clearly for humans/agents running it.
+2. Include both the requested ticket count and the observed consumed count in the terminal output.
+3. Update the E2E runbook/status notes to reflect the clearer reporting behavior.
+
+## 2026-03-15 - Milestone 12 (After)
+Completed:
+- [x] Updated `tests/test_e2e_live.py` to emit terminal-visible ticket usage lines:
+  - pre-request `planned-spend` line with requested ticket count and starting ticket-file counts
+  - post-request `result` line with requested/consumed counts and before/after ticket-file counts
+- [x] Updated contributor guidance to reflect that local developers and agents can run live E2E tests liberally in this repo:
+  - `AGENTS.md`
+  - `docs/E2E_TESTING.md`
+- [x] Live-validated the new reporting against the local ticket file.
+
+Tests:
+- `OA_E2E_LIVE=1 OA_E2E_TICKETS_FILE=oa-chat-tickets.json PYTHONPATH=src pytest -m e2e_live tests/test_e2e_live.py -q -s` -> `1 passed`
+- live terminal output:
+  - `[oa-sdk live e2e] phase=planned-spend requested_tickets=1 active_before=995 archived_before=5 model=stepfun/step-3.5-flash:free`
+  - `[oa-sdk live e2e] phase=result requested_tickets=1 active_before=995 archived_before=5 model=stepfun/step-3.5-flash:free consumed_tickets=1 active_after=994 archived_after=6`
+- `pytest -ra` -> `39 passed, 1 skipped`
+- skipped test: `tests/test_e2e_live.py` requires `OA_E2E_LIVE=1`
+- `python -m compileall -q src` -> success
+
+Ticket file state after latest live E2E run:
+- `oa-chat-tickets.json`: `994 active`, `6 archived`
+
+Remaining Risks / Follow-ups:
+1. Ticket-usage reporting is terminal-oriented; if a future runner suppresses terminal output entirely, they should use `-s` for the clearest live-test visibility.

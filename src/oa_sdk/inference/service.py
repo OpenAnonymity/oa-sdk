@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Mapping
+from typing import Collection, Mapping
 
 from ..config import OAConfig
-from ..errors import OAHTTPError
+from ..errors import OAHTTPError, OAProtocolError
 from ..models import OAResponse
 from ..retry_policy import endpoint_retry_allowed
-from ..transport import HTTPTransport
+from ..transport import HTTPTransport, ensure_success
 from .backends import (
     BackendKind,
     GeminiProviderDirectBackend,
@@ -16,6 +16,11 @@ from .backends import (
 )
 from .gemini_live import GeminiLiveClient
 from .models import AccessCredential, ResponseRequest
+from .openrouter_catalog import (
+    OpenRouterModel,
+    parse_openrouter_model_catalog,
+    select_latest_openrouter_model,
+)
 
 
 class InferenceService:
@@ -59,6 +64,44 @@ class InferenceService:
 
     def openrouter_ephemeral_backend(self, *, base_url: str | None = None) -> OpenRouterEphemeralBackend:
         return OpenRouterEphemeralBackend(base_url=base_url or self._config.openrouter_api_base)
+
+    def list_openrouter_models(self) -> list[OpenRouterModel]:
+        url = f"{self._config.openrouter_api_base.rstrip('/')}/models"
+        result = self._transport.request_json(
+            "GET",
+            url,
+            allow_retry=endpoint_retry_allowed("openrouter_model_catalog"),
+            context="OpenRouter model catalog",
+        )
+        ensure_success(result, context="OpenRouter model catalog")
+        return parse_openrouter_model_catalog(result.data)
+
+    def list_openrouter_free_models(
+        self,
+        *,
+        allowed_model_ids: Collection[str] | None = None,
+    ) -> list[OpenRouterModel]:
+        allowed = set(allowed_model_ids) if allowed_model_ids is not None else None
+        models = self.list_openrouter_models()
+        return [
+            model
+            for model in models
+            if model.is_free_text_model and (allowed is None or model.id in allowed)
+        ]
+
+    def latest_openrouter_free_model(
+        self,
+        *,
+        allowed_model_ids: Collection[str] | None = None,
+    ) -> OpenRouterModel:
+        models = self.list_openrouter_free_models(allowed_model_ids=allowed_model_ids)
+        if not models:
+            if allowed_model_ids is not None:
+                raise OAProtocolError(
+                    "OpenRouter catalog did not return any free models matching the allowed model ids"
+                )
+            raise OAProtocolError("OpenRouter catalog did not return any free text models")
+        return select_latest_openrouter_model(models)
 
     def gemini_provider_direct_backend(
         self,
