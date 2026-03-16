@@ -381,3 +381,55 @@ Ticket file state after latest live E2E run:
 
 Remaining Risks / Follow-ups:
 1. Ticket-usage reporting is terminal-oriented; if a future runner suppresses terminal output entirely, they should use `-s` for the clearest live-test visibility.
+
+## 2026-03-15 - Milestone 13 (Before)
+Planned:
+1. Simplify `oa.show_tickets(...)` preview payload so active tickets do not emit null-heavy fields by default.
+2. Add explicit preview metadata (`preview_limit`, shown counts) so the output reads more like a summary than a raw export fragment.
+3. Update tests and protocol notes for the cleaner shape.
+
+## 2026-03-15 - Milestone 13 (After)
+Completed:
+- [x] Simplified `oa.show_tickets(...)` preview payload:
+  - active tickets no longer emit `status=None` / `consumed_at=None`
+  - preview entries now include only non-null metadata unless `include_tokens=True`
+- [x] Added preview summary metadata:
+  - `preview_limit`
+  - `active_shown`
+  - `archived_shown`
+- [x] Reduced default preview limit from `20` to `5` for both Python and CLI surfaces so the default output is more summary-oriented.
+- [x] Updated tests and protocol notes for the cleaner shape.
+
+Tests:
+- `pytest tests/test_simple_api.py -q` -> `7 passed`
+- `pytest -ra` -> `39 passed, 1 skipped`
+- skipped test: `tests/test_e2e_live.py` requires `OA_E2E_LIVE=1`
+- `python -m compileall -q src` -> success
+- local shape check:
+  - `PYTHONPATH=src python - <<'PY' ... oa.show_tickets('oa-chat-tickets.json') ... PY` -> active previews show only `created_at`; default `preview_limit=5`
+
+Remaining Risks / Follow-ups:
+1. `show_tickets(..., include_tokens=False)` can still yield sparse preview items if a ticket export lacks timestamps/status metadata entirely, though current OA-issued tickets include `created_at`.
+
+## 2026-03-15 - Milestone 14 (Before)
+Planned:
+1. Make `oa.show_tickets(...)` previews include a short view of the actual finalized ticket string by default.
+2. Keep the full finalized ticket behind `include_tokens=True` to avoid dumping long secrets into normal output.
+3. Update tests and protocol notes for the new preview field.
+
+## 2026-03-15 - Milestone 14 (After)
+Completed:
+- [x] Updated `oa.show_tickets(...)` previews to include `ticket_preview` derived from the actual finalized ticket string by default.
+- [x] Kept full `finalized_ticket` output behind `include_tokens=True`.
+- [x] Preserved timestamp/status metadata when present, but no longer rely on timestamps alone to distinguish tickets.
+- [x] Updated tests and protocol notes for the new preview field.
+
+Tests:
+- `pytest tests/test_simple_api.py -q` -> `8 passed`
+- `pytest -ra` -> `40 passed, 1 skipped`
+- skipped test: `tests/test_e2e_live.py` requires `OA_E2E_LIVE=1`
+- local shape check:
+  - `PYTHONPATH=src python - <<'PY' ... oa.show_tickets('oa-chat-tickets.json') ... PY` -> active/archived previews now include shortened finalized ticket strings such as `AAIASnrvH-8_koVE...5PPgfdLs`
+
+Remaining Risks / Follow-ups:
+1. `ticket_preview` is intentionally lossy; callers that need the full finalized ticket should still use `include_tokens=True`.

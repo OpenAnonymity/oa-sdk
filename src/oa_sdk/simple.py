@@ -173,7 +173,7 @@ def show_tickets(
     ticket_file: str | Path = DEFAULT_TICKET_FILE,
     *,
     include_tokens: bool = False,
-    limit: int = 20,
+    limit: int = 5,
 ) -> dict[str, Any]:
     if limit < 0:
         raise ValueError("limit must be >= 0")
@@ -184,16 +184,22 @@ def show_tickets(
     else:
         store = TicketStore()
 
+    active_preview = [_ticket_preview(ticket, include_tokens=include_tokens) for ticket in store.active[:limit]]
+    archived_preview = [
+        _ticket_preview(ticket, include_tokens=include_tokens)
+        for ticket in store.archived[:limit]
+    ]
+
     return {
         "ticket_file": str(path),
         "exists": path.exists(),
+        "preview_limit": limit,
         "active_tickets": store.count_active(),
         "archived_tickets": len(store.archived),
-        "active": [_ticket_preview(ticket, include_tokens=include_tokens) for ticket in store.active[:limit]],
-        "archived": [
-            _ticket_preview(ticket, include_tokens=include_tokens)
-            for ticket in store.archived[:limit]
-        ],
+        "active_shown": len(active_preview),
+        "archived_shown": len(archived_preview),
+        "active": active_preview,
+        "archived": archived_preview,
     }
 
 
@@ -261,13 +267,23 @@ def _key_lease_payload(lease: KeyLease) -> dict[str, Any]:
 
 def _ticket_preview(ticket: Ticket, *, include_tokens: bool) -> dict[str, Any]:
     payload: dict[str, Any] = {
-        "created_at": ticket.created_at,
-        "consumed_at": ticket.consumed_at,
-        "status": ticket.status,
+        "ticket_preview": _preview_token(ticket.finalized_ticket),
     }
+    if ticket.created_at:
+        payload["created_at"] = ticket.created_at
+    if ticket.consumed_at:
+        payload["consumed_at"] = ticket.consumed_at
+    if ticket.status:
+        payload["status"] = ticket.status
     if include_tokens:
         payload["finalized_ticket"] = ticket.finalized_ticket
     return payload
+
+
+def _preview_token(token: str, *, prefix_chars: int = 16, suffix_chars: int = 8) -> str:
+    if len(token) <= prefix_chars + suffix_chars + 3:
+        return token
+    return f"{token[:prefix_chars]}...{token[-suffix_chars:]}"
 
 
 def _station_payload(station: StationInfo) -> dict[str, Any]:

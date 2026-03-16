@@ -190,11 +190,43 @@ def test_add_show_archive_tickets(tmp_path: Path) -> None:
     assert added["active_tickets"] == 2
 
     view = oa.show_tickets(ticket_file=ticket_file, include_tokens=False, limit=1)
+    assert view["preview_limit"] == 1
     assert view["active_tickets"] == 2
+    assert view["active_shown"] == 1
+    assert view["archived_shown"] == 0
     assert len(view["active"]) == 1
+    assert view["active"][0]["ticket_preview"] == "cred-abc-1"
+    assert "status" not in view["active"][0]
+    assert "consumed_at" not in view["active"][0]
     assert "finalized_ticket" not in view["active"][0]
 
     moved = oa.archive_tickets(ticket_file=ticket_file, count=1)
     assert moved["moved"] == 1
     assert moved["active_tickets"] == 1
     assert moved["archived_tickets"] == 1
+
+    archived_view = oa.show_tickets(ticket_file=ticket_file, include_tokens=False, limit=1)
+    assert archived_view["active_shown"] == 1
+    assert archived_view["archived_shown"] == 1
+    assert archived_view["archived"][0]["ticket_preview"] == "cred-abc-1"
+    assert archived_view["archived"][0]["status"] == "archived"
+    assert "consumed_at" in archived_view["archived"][0]
+
+
+def test_show_tickets_uses_short_token_preview_for_long_tokens(tmp_path: Path) -> None:
+    ticket_file = tmp_path / "tickets.json"
+    export = TicketExport(
+        active=[
+            Ticket(
+                finalized_ticket="A" * 40 + "B" * 20,
+                created_at="2026-03-15T00:00:00Z",
+            )
+        ],
+        archived=[],
+    )
+    TicketStore(export).save(ticket_file)
+
+    view = oa.show_tickets(ticket_file=ticket_file, include_tokens=False, limit=1)
+
+    assert view["active"][0]["ticket_preview"] == ("A" * 16) + "..." + ("B" * 8)
+    assert "finalized_ticket" not in view["active"][0]

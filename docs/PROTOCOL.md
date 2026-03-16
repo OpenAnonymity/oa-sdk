@@ -138,6 +138,15 @@ The Python SDK exposes a function-first public surface via `import oa`:
 - `show_tickets`
 - `archive_tickets`
 
+`show_tickets(...)` returns:
+- overall counts (`active_tickets`, `archived_tickets`)
+- preview metadata (`preview_limit`, `active_shown`, `archived_shown`)
+- preview lists (`active`, `archived`) that include:
+  - `ticket_preview`: short view of the finalized ticket string
+  - other non-null ticket metadata
+  - full `finalized_ticket` only when `include_tokens=True`
+- default preview limit is `5`
+
 CLI commands mirror these operations:
 - `list-stations`
 - `request-unlinkable-key`

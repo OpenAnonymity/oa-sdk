@@ -129,7 +129,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     show.add_argument("ticket_file", nargs="?", default=DEFAULT_TICKET_FILE)
     show.add_argument("--include-tokens", action="store_true", help="Include finalized ticket tokens in output")
-    show.add_argument("--limit", type=int, default=20, help="Max active/archived entries to show")
+    show.add_argument("--limit", type=int, default=5, help="Max active/archived entries to show")
     show.set_defaults(handler=handle_show_tickets)
 
     archive = subparsers.add_parser(
